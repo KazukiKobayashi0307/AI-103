@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4f6fb">
+<title>Azure AI-103</title>
+<style>
+  :root{
+    --bg:#f2f5fb; --ink:#12151f; --sub:#5b6472; --faint:#93a0b3;
+    --line:rgba(20,30,60,.11); --line2:rgba(20,30,60,.07); --card:#ffffff;
+    --shadow:0 1px 2px rgba(20,30,60,.04), 0 10px 30px rgba(20,30,60,.07);
+    --accent:#2f6fed; --accent2:#7c3aed; --accentSoft:rgba(47,111,237,.10);
+    --ok:#12a454; --okSoft:rgba(18,164,84,.11); --ng:#e0294b; --ngSoft:rgba(224,41,75,.10);
+    --gold:#c2740a;
+    --plan:#2f6fed; --genai:#7c3aed; --agent:#ea580c; --vision:#059669; --nlp:#0e8fa6; --knowledge:#c026a3;
+    --a102:#5b6472; --a103:#2f6fed;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);overscroll-behavior:none}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic UI",Meiryo,sans-serif;
+    font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;min-height:100dvh;
+    background:radial-gradient(120% 70% at 15% -10%, rgba(47,111,237,.10), transparent 55%),
+               radial-gradient(100% 60% at 100% 0%, rgba(124,58,237,.07), transparent 55%), var(--bg)}
+  .wrap{max-width:520px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;
+    padding:calc(20px + env(safe-area-inset-top)) 20px calc(26px + env(safe-area-inset-bottom))}
+  .screen{display:flex;flex-direction:column;flex:1;animation:fade .4s ease both}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .hide{display:none !important}
+  .link{background:none;border:none;color:var(--sub);cursor:pointer;font:inherit;font-size:12.5px;letter-spacing:.3px;padding:4px}
+  .link:active{opacity:.55}
+  .tiny{font-size:11px;color:var(--faint);letter-spacing:.3px}
+
+  /* top bar */
+  .bar{display:flex;align-items:center;justify-content:space-between}
+  .wm{font-size:12px;font-weight:800;letter-spacing:2.5px;color:var(--ink);text-transform:uppercase}
+  .wm.sub{color:var(--sub);font-weight:700}
+
+  /* home hero */
+  .hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px}
+  .pct{font-size:92px;font-weight:200;line-height:.95;letter-spacing:-4px;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .pct i{font-style:normal;font-size:32px;font-weight:300;-webkit-text-fill-color:var(--sub);letter-spacing:0}
+  .plabel{font-size:11px;letter-spacing:4px;color:var(--faint);text-transform:uppercase;margin-top:8px;font-weight:700}
+  .pmeta{font-size:13px;color:var(--sub);margin-top:8px}
+  .track{width:160px;height:5px;background:rgba(20,30,60,.08);border-radius:5px;margin-top:18px;overflow:hidden}
+  .track>span{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s cubic-bezier(.2,.8,.2,1)}
+
+  /* cta */
+  .cta{width:100%;border:none;border-radius:16px;padding:16px;font-size:16px;font-weight:700;letter-spacing:.5px;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff;cursor:pointer;transition:.15s;
+    box-shadow:0 10px 24px rgba(47,111,237,.28)}
+  .cta:active{transform:translateY(1px) scale(.995)}
+  .cta.ghostcta{background:#fff;color:var(--ink);border:1.5px solid var(--line);box-shadow:var(--shadow)}
+
+  /* panel card */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px 17px;box-shadow:var(--shadow)}
+
+  /* minimal controls */
+  .controls{display:flex;flex-direction:column;gap:16px}
+  .ctl{display:flex;align-items:center;gap:12px}
+  .ctl .cl{font-size:11px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase;width:56px;flex:0 0 auto;font-weight:700}
+  .seg{display:inline-flex;gap:4px;background:rgba(20,30,60,.05);border:1px solid var(--line);border-radius:11px;padding:3px}
+  .seg button{border:none;background:none;color:var(--sub);font:inherit;font-size:14px;font-weight:700;
+    padding:6px 13px;border-radius:8px;cursor:pointer;transition:.15s;min-width:36px}
+  .seg button.on{background:var(--ink);color:#fff}
+  .ctl .unit{font-size:11px;color:var(--faint)}
+  .ctl.range{justify-content:flex-start}
+  .rangeval{color:var(--accent);font-size:13px;font-weight:700}
+
+  .rgroup{margin-top:2px}
+  .glabel{font-size:10px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase;font-weight:700;margin:12px 0 7px}
+  .glabel:first-child{margin-top:2px}
+  .rpanel{display:flex;flex-wrap:wrap;gap:7px;padding-top:2px}
+  .chip{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);border-radius:999px;
+    padding:7px 13px;font-size:12.5px;color:var(--sub);cursor:pointer;transition:.15s;background:#fff;font-weight:600}
+  .chip .d{width:7px;height:7px;border-radius:50%;background:currentColor;flex:0 0 auto}
+  .chip.on{color:var(--ink);border-color:currentColor;box-shadow:0 3px 10px -4px currentColor}
+  .chip .cn{font-size:10.5px;color:var(--faint);font-weight:700}
+  .chip.on .cn{color:inherit;opacity:.7}
+
+  .homefoot{display:flex;align-items:center;justify-content:space-between;margin-top:2px}
+
+  /* quiz */
+  .qbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .qbar .no{font-size:12px;font-weight:800;letter-spacing:.5px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .qbar .src{font-size:9px;font-weight:800;letter-spacing:1px;padding:3px 9px;border-radius:6px;color:#fff;background:var(--a102)}
+  .qbar .src.v103{background:var(--a103)}
+  .qbar .dom{font-size:11px;font-weight:700;letter-spacing:.3px;padding:2px 0}
+  .qbar .streak{margin-left:auto;display:flex;gap:4px}
+  .qbar .streak i{width:7px;height:7px;border-radius:50%;background:rgba(20,30,60,.12);transition:.25s}
+  .qbar .streak i.on{background:var(--accent)}
+  .track2{height:4px;background:rgba(20,30,60,.08);border-radius:4px;overflow:hidden;margin-bottom:20px}
+  .track2>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+  .qcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 18px;box-shadow:var(--shadow);flex:1}
+  .qtext{font-size:17.5px;font-weight:700;line-height:1.8;letter-spacing:.1px}
+  .qkind{font-size:10px;letter-spacing:1.8px;color:var(--faint);text-transform:uppercase;margin:11px 0 17px;font-weight:700}
+  .opts{display:flex;flex-direction:column;gap:9px}
+  .opt{display:flex;gap:13px;align-items:flex-start;padding:14px 15px;border-radius:14px;border:1.5px solid var(--line);
+    background:#fbfcfe;cursor:pointer;transition:.15s}
+  .opt:active{transform:scale(.994)}
+  .opt .mk{width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(20,30,60,.22);flex:0 0 auto;margin-top:2px;
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;transition:.15s;background:#fff}
+  .opt.multi .mk{border-radius:6px}
+  .opt .ot{flex:1;font-size:14.5px;line-height:1.7;color:var(--ink)}
+  .opt.sel{border-color:var(--accent);background:var(--accentSoft)}
+  .opt.sel .mk{background:var(--accent);border-color:var(--accent)}
+  .opt.correct{border-color:var(--ok);background:var(--okSoft)}
+  .opt.correct .mk{background:var(--ok);border-color:var(--ok)}
+  .opt.wrong{border-color:var(--ng);background:var(--ngSoft)}
+  .opt.wrong .mk{background:var(--ng);border-color:var(--ng)}
+  .opt.lock{cursor:default}.opt.lock:active{transform:none}
+
+  /* explanation */
+  .exp{margin-top:20px;border-top:1px solid var(--line2);padding-top:19px;animation:fade .4s both}
+  .verdict{font-size:16px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;gap:9px}
+  .verdict.ok{color:var(--ok)} .verdict.ng{color:var(--ng)}
+  .verdict .vm{width:23px;height:23px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+  .verdict.ok .vm{background:var(--ok)} .verdict.ng .vm{background:var(--ng)}
+  .mbox{margin-top:12px;background:var(--accentSoft);border:1px solid rgba(47,111,237,.28);color:#1f4fbf;
+    padding:12px 14px;border-radius:13px;font-size:13px;line-height:1.65;font-weight:600}
+  .snote{margin-top:10px;font-size:12.5px;color:var(--sub)}
+  .summary{margin-top:15px;font-size:14px;line-height:1.85;color:var(--ink);padding:13px 15px;
+    background:#f7f9fd;border-left:3px solid var(--accent);border-radius:0 12px 12px 0}
+  .exp h4{font-size:10px;letter-spacing:2.2px;color:var(--faint);text-transform:uppercase;margin:22px 0 10px;font-weight:800}
+  .exrow{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line2);font-size:13.5px;line-height:1.8}
+  .exrow:last-child{border-bottom:none}
+  .exrow .ic{flex:0 0 auto;width:17px;text-align:center;font-weight:800;margin-top:1px}
+  .exrow.c .ic{color:var(--ok)} .exrow.x .ic{color:var(--ng)}
+  .exrow .et{color:var(--sub)} .exrow .et b{color:var(--ink);font-weight:700}
+  .kw{margin:11px 0;padding:12px 14px;background:#fbfaf5;border:1px solid rgba(194,116,10,.18);border-radius:13px}
+  .kw .term{font-weight:800;font-size:13px;color:var(--gold);margin-bottom:5px;letter-spacing:.2px}
+  .kw .desc{font-size:13px;color:#4a4438;line-height:1.9}
+
+  /* result */
+  .rhero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .rhero .rt{font-size:10px;letter-spacing:4px;color:var(--faint);text-transform:uppercase;font-weight:800}
+  .rhero .sc{font-size:60px;font-weight:200;letter-spacing:-2px;margin:8px 0 4px;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .rhero .rm{color:var(--sub);font-size:13.5px;max-width:300px}
+  .rstats{display:flex;justify-content:center;gap:26px;margin-top:26px}
+  .rstats .rs{text-align:center}
+  .rstats .rs .n{font-size:23px;font-weight:700}
+  .rstats .rs .l{font-size:10px;color:var(--faint);letter-spacing:1px;margin-top:3px;font-weight:700}
+
+  /* glossary */
+  .gsearch{width:100%;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:13px;
+    padding:13px 15px;font-size:14px;outline:none;margin-bottom:10px;box-shadow:var(--shadow)}
+  .gsearch::placeholder{color:var(--faint)}
+  .gsearch:focus{border-color:var(--accent)}
+  .gfilter{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+  .gcat{font-size:10.5px;letter-spacing:2.5px;color:var(--accent);text-transform:uppercase;font-weight:800;margin:20px 0 4px;padding-top:16px;border-top:1px solid var(--line2)}
+  .gcat:first-child{border-top:none;margin-top:4px;padding-top:0}
+  .gterm{padding:15px 0;border-bottom:1px solid var(--line2)}
+  .gterm .gt{font-weight:800;font-size:14px;color:var(--ink)}
+  .gterm .gx{font-size:13px;color:var(--sub);line-height:1.9;margin-top:6px}
+  .gcount{font-size:11px;color:var(--faint);margin-bottom:2px;letter-spacing:.5px;font-weight:700}
+
+  .spacer{flex:1}
+  .mt{margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HOME -->
+  <section id="home" class="screen">
+    <div class="bar"><span class="wm">Azure <span class="wm sub">AI-103</span></span><button class="link" id="open-gloss">用語集 ›</button></div>
+    <div class="hero">
+      <div class="pct" id="h-pct">0<i>%</i></div>
+      <div class="plabel">達成度</div>
+      <div class="pmeta" id="h-meta">習得 0 / 0</div>
+      <div class="track"><span id="h-track" style="width:0%"></span></div>
+    </div>
+    <div class="panel controls">
+      <button class="cta" id="go">はじめる</button>
+      <div class="ctl"><span class="cl">出題数</span>
+        <div class="seg" id="seg-count"><button data-v="5">5</button><button data-v="10" class="on">10</button></div>
+      </div>
+      <div class="ctl"><span class="cl">習得</span>
+        <div class="seg" id="seg-thresh"><button data-v="2">2</button><button data-v="3" class="on">3</button><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6</button></div>
+        <span class="unit">回連続正解</span>
+      </div>
+      <div class="ctl range"><span class="cl">範囲</span><button class="link rangeval" id="range-toggle">すべて ▾</button></div>
+      <div class="rgroup hide" id="rpanel-wrap">
+        <div class="glabel">分野</div>
+        <div class="rpanel" id="rpanel-domain"></div>
+        <div class="glabel">出典</div>
+        <div class="rpanel" id="rpanel-source"></div>
+      </div>
+      <div class="homefoot"><span class="tiny" id="scope"></span><button class="link tiny" id="reset">進捗をリセット</button></div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="screen hide">
+    <div class="bar"><button class="link" id="quit">‹ 中断</button><span class="wm sub" id="q-dommini" style="font-size:11px"></span></div>
+    <div class="qbar mt">
+      <span class="no"><span id="q-i">1</span>/<span id="q-n">10</span></span>
+      <span class="src" id="q-src">AI-102</span>
+      <span class="dom" id="q-dom">範囲</span>
+      <span class="streak" id="q-streak"></span>
+    </div>
+    <div class="track2"><i id="q-prog" style="width:0%"></i></div>
+    <div class="qcard">
+      <div class="qtext" id="q-text"></div>
+      <div class="qkind" id="q-kind"></div>
+      <div class="opts" id="q-opts"></div>
+      <div class="exp hide" id="q-exp"></div>
+    </div>
+    <button class="cta mt" id="answer" style="opacity:.4;pointer-events:none">解答する</button>
+    <button class="cta mt hide" id="next">次の問題へ</button>
+    <button class="cta mt hide" id="finish">結果を見る</button>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="screen hide">
+    <div class="bar"><span class="wm">結果</span></div>
+    <div class="rhero">
+      <div class="rt">Score</div>
+      <div class="sc" id="r-sc">0 / 0</div>
+      <div class="rm" id="r-msg"></div>
+      <div class="rstats">
+        <div class="rs"><div class="n" style="color:var(--ok)" id="r-ok">0</div><div class="l">正解</div></div>
+        <div class="rs"><div class="n" style="color:var(--ng)" id="r-ng">0</div><div class="l">不正解</div></div>
+        <div class="rs"><div class="n" style="color:var(--accent)" id="r-new">0</div><div class="l">新規習得</div></div>
+      </div>
+    </div>
+    <button class="cta" id="again">続けて演習</button>
+    <button class="link mt" id="home2" style="align-self:center">ホームへ</button>
+  </section>
+
+  <!-- GLOSSARY -->
+  <section id="gloss" class="screen hide">
+    <div class="bar"><button class="link" id="gloss-back">‹ 戻る</button><span class="wm">用語集</span></div>
+    <input class="gsearch mt" id="g-search" placeholder="Azure 用語を検索（例: ベクター, PTU, Layout）">
+    <div class="gcount" id="g-count"></div>
+    <div id="g-list" class="spacer"></div>
+  </section>
+
+</div>
+
+<script src="questions.js"></script>
+<script src="questions1b.js"></script>
+<script src="questions2.js"></script>
+<script src="questions3.js"></script>
+<script src="questions4.js"></script>
+<script src="questions5.js"></script>
+<script src="glossary.js"></script>
+<script>
+"use strict";
+(function(){
+  var QS=(window.AI103_QUESTIONS||[]).slice();
+  var DORDER=["plan","genai","agent","vision","nlp","knowledge"];
+  var DOMAINS={plan:{label:"計画と管理",raw:"#2f6fed"},genai:{label:"生成 AI",raw:"#7c3aed"},agent:{label:"エージェント",raw:"#ea580c"},
+    vision:{label:"ビジョン",raw:"#059669"},nlp:{label:"自然言語",raw:"#0e8fa6"},knowledge:{label:"ナレッジ",raw:"#c026a3"}};
+  var SORDER=["AI-102","AI-103"];
+  var SOURCES={"AI-102":{label:"AI-102",raw:"#5b6472"},"AI-103":{label:"AI-103",raw:"#2f6fed"}};
+  var SK="ai103_progress_v3", CK="ai103_settings_v4";   // v4: 出典(source)フィルタ追加に伴い設定キーを更新
+  function jload(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch(e){return f;}}
+  function jsave(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+  var streaks=jload(SK,{}),s0=jload(CK,{});
+  var cfg={count:s0.count||10,thresh:s0.thresh||3,domains:Array.isArray(s0.domains)?s0.domains:[],sources:Array.isArray(s0.sources)?s0.sources:[]};
+  function saveCfg(){jsave(CK,cfg);} function saveStreaks(){jsave(SK,streaks);}
+  var $=function(id){return document.getElementById(id);};
+  function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
+  function isMastered(q){return (streaks[q.id]||0)>=cfg.thresh;}
+  function qsrc(q){return q.source||"AI-102";}
+  function inScope(q){
+    var domOk=cfg.domains.length===0||cfg.domains.indexOf(q.domain)>=0;
+    var srcOk=cfg.sources.length===0||cfg.sources.indexOf(qsrc(q))>=0;
+    return domOk&&srcOk;
+  }
+  function esc(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+  function escbr(s){return esc(s).replace(/\n/g,'<br>');}
+  function dcount(k){var a=QS.filter(function(q){return q.domain===k;});return {n:a.length,m:a.filter(isMastered).length};}
+  function scount(k){var a=QS.filter(function(q){return qsrc(q)===k;});return {n:a.length,m:a.filter(isMastered).length};}
+
+  /* ---- glossary lookup + auto term detection ---- */
+  function normT(s){return String(s).toLowerCase().replace(/[\s　・／/（）()【】\[\]、,。.｜|]/g,'');}
+  var GMAP=null;
+  function glossMap(){if(GMAP)return GMAP;GMAP={};(window.AI103_GLOSSARY||[]).forEach(function(g){GMAP[normT(g.term)]=g;(g.aliases||[]).forEach(function(a){GMAP[normT(a)]=g;});});return GMAP;}
+  function glossLookup(term){return glossMap()[normT(term)]||null;}
+  function collectKeywords(q){
+    var out=[],seen={};
+    (q.keywords||[]).forEach(function(kw){
+      var g=glossLookup(kw.k);
+      var key=g?normT(g.term):normT(kw.k);
+      if(seen[key])return;seen[key]=1;
+      out.push({term:g?g.term:kw.k,body:g?g.body:kw.d});
+    });
+    var haystack=(q.q+" "+q.choices.map(function(c){return c.t+" "+c.e;}).join(" ")+" "+(q.summary||"")).toLowerCase();
+    (window.AI103_GLOSSARY||[]).forEach(function(g){
+      var key=normT(g.term);if(seen[key])return;
+      var cands=[g.term].concat(g.aliases||[]);
+      var hit=cands.some(function(c){if(!c)return false;var cc=c.toLowerCase();if(cc.length<3)return false;return haystack.indexOf(cc)>=0;});
+      if(hit){seen[key]=1;out.push({term:g.term,body:g.body});}
+    });
+    return out;
+  }
+
+  /* ---- home ---- */
+  function renderHome(){
+    var tot=QS.length,m=QS.filter(isMastered).length,pct=tot?Math.round(m/tot*100):0;
+    $("h-pct").innerHTML=pct+'<i>%</i>';
+    $("h-meta").textContent="習得 "+m+" / "+tot;
+    $("h-track").style.width=pct+"%";
+    [].forEach.call($("seg-count").children,function(b){b.classList.toggle("on",+b.dataset.v===cfg.count);});
+    [].forEach.call($("seg-thresh").children,function(b){b.classList.toggle("on",+b.dataset.v===cfg.thresh);});
+    // range summary label
+    var anyD=cfg.domains.length>0, anyS=cfg.sources.length>0;
+    var parts=[];
+    if(anyD)parts.push(cfg.domains.length+"分野");
+    if(anyS)parts.push(cfg.sources.join("/"));
+    $("range-toggle").textContent=(parts.length?parts.join(" · "):"すべて")+" ▾";
+    // domain chips
+    var rpD=$("rpanel-domain");
+    if(!rpD.dataset.built){
+      DORDER.forEach(function(k){var el=document.createElement("button");el.className="chip";el.dataset.k=k;el.style.color=DOMAINS[k].raw;
+        el.innerHTML='<span class="d"></span><span>'+DOMAINS[k].label+'</span> <span class="cn"></span>';
+        el.addEventListener("click",function(){var i=cfg.domains.indexOf(k);if(i>=0)cfg.domains.splice(i,1);else cfg.domains.push(k);saveCfg();renderHome();});
+        rpD.appendChild(el);});
+      rpD.dataset.built="1";
+    }
+    [].forEach.call(rpD.children,function(el){var k=el.dataset.k,dc=dcount(k);el.classList.toggle("on",cfg.domains.indexOf(k)>=0);el.querySelector(".cn").textContent=dc.m+"/"+dc.n;});
+    // source chips
+    var rpS=$("rpanel-source");
+    if(!rpS.dataset.built){
+      SORDER.forEach(function(k){var el=document.createElement("button");el.className="chip";el.dataset.k=k;el.style.color=SOURCES[k].raw;
+        el.innerHTML='<span class="d"></span><span>'+SOURCES[k].label+'</span> <span class="cn"></span>';
+        el.addEventListener("click",function(){var i=cfg.sources.indexOf(k);if(i>=0)cfg.sources.splice(i,1);else cfg.sources.push(k);saveCfg();renderHome();});
+        rpS.appendChild(el);});
+      rpS.dataset.built="1";
+    }
+    [].forEach.call(rpS.children,function(el){var k=el.dataset.k,sc=scount(k);el.classList.toggle("on",cfg.sources.indexOf(k)>=0);el.querySelector(".cn").textContent=sc.m+"/"+sc.n;});
+
+    var scope=QS.filter(inScope),avail=scope.filter(function(q){return !isMastered(q);}),go=$("go");
+    var any=anyD||anyS;
+    $("scope").textContent=(any?"選択 ":"全 ")+scope.length+" 問 · 未習得 "+avail.length;
+    if(scope.length===0){go.textContent="この範囲には問題がありません";go.dataset.review="0";}
+    else if(avail.length>0){go.textContent="はじめる（ "+Math.min(cfg.count,avail.length)+" 問 ）";go.dataset.review="0";}
+    else{go.textContent="復習する（全 "+scope.length+" 問）";go.dataset.review="1";}
+  }
+  $("seg-count").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;cfg.count=+b.dataset.v;saveCfg();renderHome();});
+  $("seg-thresh").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;cfg.thresh=+b.dataset.v;saveCfg();renderHome();});
+  $("range-toggle").addEventListener("click",function(){$("rpanel-wrap").classList.toggle("hide");});
+  $("reset").addEventListener("click",function(){if(confirm("すべての連続正解・習得状況をリセットします。よろしいですか？")){streaks={};saveStreaks();renderHome();}});
+
+  /* ---- session ---- */
+  var session=null;
+  function start(review){
+    var scope=QS.filter(inScope);
+    if(scope.length===0)return;
+    var pool=review?scope.slice():scope.filter(function(q){return !isMastered(q);});
+    if(pool.length===0)pool=scope.slice();
+    pool=shuffle(pool).slice(0,cfg.count);
+    session={items:pool.map(function(q){return {q:q,order:shuffle(q.choices.map(function(_,i){return i;})),selected:[],answered:false,correct:false};}),i:0,correct:0,wrong:0,nm:0,review:!!review};
+    show("quiz");renderQ();
+  }
+  $("go").addEventListener("click",function(){start($("go").dataset.review==="1");});
+  function show(name){["home","quiz","result","gloss"].forEach(function(s){$(s).classList.toggle("hide",s!==name);});window.scrollTo(0,0);if(name==="home")renderHome();if(name==="gloss")renderGloss();}
+  function setBtns(s){$("answer").classList.toggle("hide",s!=="answer");$("next").classList.toggle("hide",s!=="next");$("finish").classList.toggle("hide",s!=="finish");}
+
+  function renderQ(){
+    var it=session.items[session.i],q=it.q;
+    $("q-i").textContent=session.i+1;$("q-n").textContent=session.items.length;
+    $("q-prog").style.width=(session.i/session.items.length*100)+"%";
+    $("q-dom").textContent=DOMAINS[q.domain].label;$("q-dom").style.color=DOMAINS[q.domain].raw;
+    $("q-dommini").textContent=DOMAINS[q.domain].label+(session.review?" · 復習":"");
+    var src=qsrc(q),se=$("q-src");se.textContent=src;se.classList.toggle("v103",src==="AI-103");
+    $("q-text").textContent=q.q;
+    $("q-kind").textContent=q.type==="multi"?"複数選択 — 正しいものをすべて":"単一選択 — 1つ選ぶ";
+    var cur=streaks[q.id]||0,sk=$("q-streak");sk.innerHTML="";
+    for(var x=0;x<cfg.thresh;x++){var i=document.createElement("i");if(x<cur)i.className="on";sk.appendChild(i);}
+    var box=$("q-opts");box.innerHTML="";
+    it.order.forEach(function(ci){var c=q.choices[ci],el=document.createElement("div");
+      el.className="opt "+(q.type==="multi"?"multi":"single");el.dataset.ci=ci;
+      el.innerHTML='<div class="mk"></div><div class="ot"></div>';el.querySelector(".ot").textContent=c.t;
+      el.addEventListener("click",function(){pick(it,ci,el);});box.appendChild(el);});
+    $("q-exp").classList.add("hide");$("q-exp").innerHTML="";
+    var a=$("answer");a.style.opacity=".4";a.style.pointerEvents="none";setBtns("answer");
+  }
+  function pick(it,ci,el){
+    if(it.answered)return;
+    if(it.q.type==="single"){it.selected=[ci];[].forEach.call($("q-opts").children,function(o){var on=+o.dataset.ci===ci;o.classList.toggle("sel",on);o.querySelector(".mk").textContent=on?"✓":"";});}
+    else{var i=it.selected.indexOf(ci);if(i>=0){it.selected.splice(i,1);el.classList.remove("sel");el.querySelector(".mk").textContent="";}else{it.selected.push(ci);el.classList.add("sel");el.querySelector(".mk").textContent="✓";}}
+    var a=$("answer"),ok=it.selected.length>0;a.style.opacity=ok?"1":".4";a.style.pointerEvents=ok?"auto":"none";
+  }
+  function grade(it){var cor=it.q.choices.map(function(c,i){return c.c?i:-1;}).filter(function(i){return i>=0;}).sort();var sel=it.selected.slice().sort();return sel.length===cor.length&&sel.every(function(v,i){return v===cor[i];});}
+  function answer(){
+    var it=session.items[session.i];if(it.answered||it.selected.length===0)return;
+    it.answered=true;it.correct=grade(it);var q=it.q,prev=streaks[q.id]||0,was=prev>=cfg.thresh;
+    if(it.correct){streaks[q.id]=prev+1;session.correct++;}else{streaks[q.id]=0;session.wrong++;}
+    var now=(streaks[q.id]||0)>=cfg.thresh;if(now&&!was)session.nm++;saveStreaks();
+    [].forEach.call($("q-opts").children,function(o){var ci=+o.dataset.ci,c=q.choices[ci];o.classList.add("lock");
+      o.querySelector(".mk").textContent=c.c?"✓":(it.selected.indexOf(ci)>=0?"✕":"");
+      if(c.c)o.classList.add("correct");else if(it.selected.indexOf(ci)>=0)o.classList.add("wrong");});
+    var cur=streaks[q.id]||0,dots=$("q-streak").children;for(var x=0;x<dots.length;x++)dots[x].className=x<cur?"on":"";
+    explain(it,now);$("q-prog").style.width=((session.i+1)/session.items.length*100)+"%";
+    setBtns(session.i===session.items.length-1?"finish":"next");
+  }
+  function explain(it,now){
+    var q=it.q,h="";
+    h+='<div class="verdict '+(it.correct?'ok':'ng')+'"><span class="vm">'+(it.correct?'✓':'✕')+'</span>'+(it.correct?'正解':'不正解')+'</div>';
+    if(it.correct&&now)h+='<div class="mbox">習得しました（'+cfg.thresh+'回連続正解）。この問題は今後の出題から外れます。</div>';
+    else{var st=streaks[q.id]||0;h+=it.correct?'<div class="snote">連続正解 '+st+' / '+cfg.thresh+'（あと '+(cfg.thresh-st)+' 回で習得）</div>':'<div class="snote">不正解のため連続正解はリセットされました（0 / '+cfg.thresh+'）</div>';}
+    if(q.summary)h+='<div class="summary">'+esc(q.summary)+'</div>';
+    h+='<h4>選択肢ごとの解説</h4>';
+    it.order.forEach(function(ci){var c=q.choices[ci];h+='<div class="exrow '+(c.c?'c':'x')+'"><div class="ic">'+(c.c?'◯':'×')+'</div><div class="et"><b>'+esc(c.t)+'</b><br>'+esc(c.e)+'</div></div>';});
+    var kws=collectKeywords(q);
+    if(kws.length){h+='<h4>用語解説</h4>';kws.forEach(function(kw){h+='<div class="kw"><div class="term">'+esc(kw.term)+'</div><div class="desc">'+escbr(kw.body)+'</div></div>';});}
+    var ex=$("q-exp");ex.innerHTML=h;ex.classList.remove("hide");
+  }
+  function next(){session.i++;if(session.i>=session.items.length){finish();return;}renderQ();}
+  function finish(){
+    var n=session.items.length;$("r-sc").textContent=session.correct+" / "+n;
+    $("r-ok").textContent=session.correct;$("r-ng").textContent=session.wrong;$("r-new").textContent=session.nm;
+    var rate=n?session.correct/n:0;
+    $("r-msg").textContent=rate===1?"完璧です。重箱の隅まで制覇しました。":rate>=0.7?"good。あと少しで満点。":rate>=0.4?"解説を読み込んで再挑戦を。":"伸びしろの塊。解説重視で復習しましょう。";
+    show("result");
+  }
+  $("answer").addEventListener("click",answer);$("next").addEventListener("click",next);$("finish").addEventListener("click",finish);
+  $("again").addEventListener("click",function(){show("home");});$("home2").addEventListener("click",function(){show("home");});
+  $("quit").addEventListener("click",function(){if(confirm("演習を中断してホームに戻ります。"))show("home");});
+
+  /* ---- glossary (curated deep entries, grouped by category) ---- */
+  var gQuery="";
+  function renderGloss(){listGloss();}
+  function listGloss(){var list=$("g-list");list.innerHTML="";
+    var G=(window.AI103_GLOSSARY||[]);
+    var items=G.filter(function(g){if(!gQuery)return true;var s=(g.term+" "+g.body+" "+(g.aliases||[]).join(" ")).toLowerCase();return s.indexOf(gQuery.toLowerCase())>=0;});
+    $("g-count").textContent=items.length+" 語";
+    var order=["計画・基盤","責任ある AI","生成AI","モデル選定・評価","エージェント","ビジョン","自然言語","ナレッジ"],cats={};
+    items.forEach(function(g){(cats[g.cat]=cats[g.cat]||[]).push(g);});
+    var keys=Object.keys(cats).sort(function(a,b){var ia=order.indexOf(a),ib=order.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);});
+    keys.forEach(function(cat){var hh=document.createElement("div");hh.className="gcat";hh.textContent=cat;list.appendChild(hh);
+      cats[cat].forEach(function(g){var el=document.createElement("div");el.className="gterm";
+        el.innerHTML='<div class="gt">'+esc(g.term)+'</div><div class="gx">'+escbr(g.body)+'</div>';list.appendChild(el);});});}
+  $("open-gloss").addEventListener("click",function(){show("gloss");});
+  $("gloss-back").addEventListener("click",function(){show("home");});
+  $("g-search").addEventListener("input",function(e){gQuery=e.target.value;listGloss();});
+
+  renderHome();show("home");
+})();
+</script>
+</body>
+</html>
