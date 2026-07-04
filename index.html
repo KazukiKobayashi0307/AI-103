@@ -3,8 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f4f6fb">
-<title>Azure AI-103</title>
+<meta name="theme-color" content="#2f6fed">
+<meta name="description" content="Microsoft Azure AI-103（AI エンジニア アソシエイト）試験対策の高難度模擬問題演習アプリ。誤答の背景まで詳しく解説し、用語集で専門用語を深く学べます。">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AI-103">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Azure AI-103 対策アプリ</title>
 <style>
   :root{
     --bg:#f2f5fb; --ink:#12151f; --sub:#5b6472; --faint:#93a0b3;
@@ -58,13 +68,13 @@
 
   /* minimal controls */
   .controls{display:flex;flex-direction:column;gap:16px}
-  .ctl{display:flex;align-items:center;gap:12px}
+  .ctl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;row-gap:6px}
   .ctl .cl{font-size:11px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase;width:56px;flex:0 0 auto;font-weight:700}
   .seg{display:inline-flex;gap:4px;background:rgba(20,30,60,.05);border:1px solid var(--line);border-radius:11px;padding:3px}
   .seg button{border:none;background:none;color:var(--sub);font:inherit;font-size:14px;font-weight:700;
     padding:6px 13px;border-radius:8px;cursor:pointer;transition:.15s;min-width:36px}
   .seg button.on{background:var(--ink);color:#fff}
-  .ctl .unit{font-size:11px;color:var(--faint)}
+  .ctl .unit{font-size:11px;color:var(--faint);white-space:nowrap}
   .ctl.range{justify-content:flex-start}
   .rangeval{color:var(--accent);font-size:13px;font-weight:700}
 
@@ -142,6 +152,9 @@
   .rstats .rs{text-align:center}
   .rstats .rs .n{font-size:23px;font-weight:700}
   .rstats .rs .l{font-size:10px;color:var(--faint);letter-spacing:1px;margin-top:3px;font-weight:700}
+  .wrow{display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line2);font-size:12.5px;line-height:1.6;color:var(--sub)}
+  .wrow:last-child{border-bottom:none}
+  .wrow .wd{width:7px;height:7px;border-radius:50%;flex:0 0 auto;margin-top:6px}
 
   /* glossary */
   .gsearch{width:100%;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:13px;
@@ -226,6 +239,11 @@
         <div class="rs"><div class="n" style="color:var(--accent)" id="r-new">0</div><div class="l">新規習得</div></div>
       </div>
     </div>
+    <div class="panel hide" id="r-wrong-panel" style="margin-bottom:14px">
+      <div class="glabel" style="margin-top:0">間違えた問題</div>
+      <div id="r-wronglist"></div>
+    </div>
+    <button class="cta ghostcta hide" id="retry-wrong" style="margin-bottom:10px">間違いをすぐ復習</button>
     <button class="cta" id="again">続けて演習</button>
     <button class="link mt" id="home2" style="align-self:center">ホームへ</button>
   </section>
@@ -246,6 +264,8 @@
 <script src="questions3.js"></script>
 <script src="questions4.js"></script>
 <script src="questions5.js"></script>
+<script src="questions6.js"></script>
+<script src="questions7.js"></script>
 <script src="glossary.js"></script>
 <script>
 "use strict";
@@ -256,12 +276,13 @@
     vision:{label:"ビジョン",raw:"#059669"},nlp:{label:"自然言語",raw:"#0e8fa6"},knowledge:{label:"ナレッジ",raw:"#c026a3"}};
   var SORDER=["AI-102","AI-103"];
   var SOURCES={"AI-102":{label:"AI-102",raw:"#5b6472"},"AI-103":{label:"AI-103",raw:"#2f6fed"}};
-  var SK="ai103_progress_v3", CK="ai103_settings_v4";   // v4: 出典(source)フィルタ追加に伴い設定キーを更新
+  var SK="ai103_progress_v3", CK="ai103_settings_v4", STK="ai103_stats_v1";   // v4: 出典(source)フィルタ追加 / stats: qidごとの正解・不正解回数
   function jload(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch(e){return f;}}
   function jsave(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-  var streaks=jload(SK,{}),s0=jload(CK,{});
+  var streaks=jload(SK,{}),s0=jload(CK,{}),stats=jload(STK,{});
   var cfg={count:s0.count||10,thresh:s0.thresh||3,domains:Array.isArray(s0.domains)?s0.domains:[],sources:Array.isArray(s0.sources)?s0.sources:[]};
-  function saveCfg(){jsave(CK,cfg);} function saveStreaks(){jsave(SK,streaks);}
+  function saveCfg(){jsave(CK,cfg);} function saveStreaks(){jsave(SK,streaks);} function saveStats(){jsave(STK,stats);}
+  function isTricky(q){var s=stats[q.id];return !!(s&&s.w>0)&&!isMastered(q);}  // 一度でも間違えた未習得問題＝要復習
   var $=function(id){return document.getElementById(id);};
   function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
   function isMastered(q){return (streaks[q.id]||0)>=cfg.thresh;}
@@ -336,7 +357,8 @@
 
     var scope=QS.filter(inScope),avail=scope.filter(function(q){return !isMastered(q);}),go=$("go");
     var any=anyD||anyS;
-    $("scope").textContent=(any?"選択 ":"全 ")+scope.length+" 問 · 未習得 "+avail.length;
+    var trickyN=scope.filter(isTricky).length;
+    $("scope").textContent=(any?"選択 ":"全 ")+scope.length+" 問 · 未習得 "+avail.length+(trickyN?" · 要復習 "+trickyN:"");
     if(scope.length===0){go.textContent="この範囲には問題がありません";go.dataset.review="0";}
     else if(avail.length>0){go.textContent="はじめる（ "+Math.min(cfg.count,avail.length)+" 問 ）";go.dataset.review="0";}
     else{go.textContent="復習する（全 "+scope.length+" 問）";go.dataset.review="1";}
@@ -344,18 +366,27 @@
   $("seg-count").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;cfg.count=+b.dataset.v;saveCfg();renderHome();});
   $("seg-thresh").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;cfg.thresh=+b.dataset.v;saveCfg();renderHome();});
   $("range-toggle").addEventListener("click",function(){$("rpanel-wrap").classList.toggle("hide");});
-  $("reset").addEventListener("click",function(){if(confirm("すべての連続正解・習得状況をリセットします。よろしいですか？")){streaks={};saveStreaks();renderHome();}});
+  $("reset").addEventListener("click",function(){if(confirm("すべての連続正解・習得状況・解答履歴をリセットします。よろしいですか？")){streaks={};stats={};saveStreaks();saveStats();renderHome();}});
 
   /* ---- session ---- */
   var session=null;
+  function buildSession(pool,review){
+    session={items:pool.map(function(q){return {q:q,order:shuffle(q.choices.map(function(_,i){return i;})),selected:[],answered:false,correct:false};}),i:0,correct:0,wrong:0,nm:0,review:!!review};
+    show("quiz");renderQ();
+  }
   function start(review){
     var scope=QS.filter(inScope);
     if(scope.length===0)return;
     var pool=review?scope.slice():scope.filter(function(q){return !isMastered(q);});
     if(pool.length===0)pool=scope.slice();
-    pool=shuffle(pool).slice(0,cfg.count);
-    session={items:pool.map(function(q){return {q:q,order:shuffle(q.choices.map(function(_,i){return i;})),selected:[],answered:false,correct:false};}),i:0,correct:0,wrong:0,nm:0,review:!!review};
-    show("quiz");renderQ();
+    // 間違い優先の重み付け: 出題枠の半分までを「過去に間違えた問題」から先に確保し、残りは通常プールから
+    pool=shuffle(pool);
+    var tricky=pool.filter(function(q){var s=stats[q.id];return s&&s.w>0;});
+    var fresh=pool.filter(function(q){var s=stats[q.id];return !s||s.w===0;});
+    var half=Math.ceil(cfg.count/2);
+    var sel=tricky.slice(0,half).concat(fresh);
+    if(sel.length<cfg.count)sel=sel.concat(tricky.slice(half));
+    buildSession(shuffle(sel.slice(0,cfg.count)),review);
   }
   $("go").addEventListener("click",function(){start($("go").dataset.review==="1");});
   function show(name){["home","quiz","result","gloss"].forEach(function(s){$(s).classList.toggle("hide",s!==name);});window.scrollTo(0,0);if(name==="home")renderHome();if(name==="gloss")renderGloss();}
@@ -392,6 +423,7 @@
     it.answered=true;it.correct=grade(it);var q=it.q,prev=streaks[q.id]||0,was=prev>=cfg.thresh;
     if(it.correct){streaks[q.id]=prev+1;session.correct++;}else{streaks[q.id]=0;session.wrong++;}
     var now=(streaks[q.id]||0)>=cfg.thresh;if(now&&!was)session.nm++;saveStreaks();
+    var st=stats[q.id]||(stats[q.id]={c:0,w:0});if(it.correct)st.c++;else st.w++;saveStats();
     [].forEach.call($("q-opts").children,function(o){var ci=+o.dataset.ci,c=q.choices[ci];o.classList.add("lock");
       o.querySelector(".mk").textContent=c.c?"✓":(it.selected.indexOf(ci)>=0?"✕":"");
       if(c.c)o.classList.add("correct");else if(it.selected.indexOf(ci)>=0)o.classList.add("wrong");});
@@ -412,13 +444,31 @@
     var ex=$("q-exp");ex.innerHTML=h;ex.classList.remove("hide");
   }
   function next(){session.i++;if(session.i>=session.items.length){finish();return;}renderQ();}
+  var lastWrongQs=[];
   function finish(){
     var n=session.items.length;$("r-sc").textContent=session.correct+" / "+n;
     $("r-ok").textContent=session.correct;$("r-ng").textContent=session.wrong;$("r-new").textContent=session.nm;
     var rate=n?session.correct/n:0;
     $("r-msg").textContent=rate===1?"完璧です。重箱の隅まで制覇しました。":rate>=0.7?"good。あと少しで満点。":rate>=0.4?"解説を読み込んで再挑戦を。":"伸びしろの塊。解説重視で復習しましょう。";
+    // 間違えた問題の一覧と即復習ボタン
+    lastWrongQs=session.items.filter(function(it){return it.answered&&!it.correct;}).map(function(it){return it.q;});
+    var panel=$("r-wrong-panel"),list=$("r-wronglist"),btn=$("retry-wrong");
+    list.innerHTML="";
+    if(lastWrongQs.length){
+      lastWrongQs.forEach(function(q){
+        var row=document.createElement("div");row.className="wrow";
+        var head=q.q.length>64?q.q.slice(0,64)+"…":q.q;
+        row.innerHTML='<span class="wd" style="background:'+DOMAINS[q.domain].raw+'"></span><span></span>';
+        row.querySelector("span:last-child").textContent=head;
+        list.appendChild(row);
+      });
+      panel.classList.remove("hide");btn.classList.remove("hide");
+    } else { panel.classList.add("hide");btn.classList.add("hide"); }
     show("result");
   }
+  $("retry-wrong").addEventListener("click",function(){
+    if(lastWrongQs.length)buildSession(shuffle(lastWrongQs.slice()),true);
+  });
   $("answer").addEventListener("click",answer);$("next").addEventListener("click",next);$("finish").addEventListener("click",finish);
   $("again").addEventListener("click",function(){show("home");});$("home2").addEventListener("click",function(){show("home");});
   $("quit").addEventListener("click",function(){if(confirm("演習を中断してホームに戻ります。"))show("home");});
@@ -430,7 +480,7 @@
     var G=(window.AI103_GLOSSARY||[]);
     var items=G.filter(function(g){if(!gQuery)return true;var s=(g.term+" "+g.body+" "+(g.aliases||[]).join(" ")).toLowerCase();return s.indexOf(gQuery.toLowerCase())>=0;});
     $("g-count").textContent=items.length+" 語";
-    var order=["計画・基盤","責任ある AI","生成AI","モデル選定・評価","エージェント","ビジョン","自然言語","ナレッジ"],cats={};
+    var order=["計画・基盤","責任ある AI","生成AI","アプリ開発","モデル選定・評価","エージェント","ビジョン","自然言語","ナレッジ"],cats={};
     items.forEach(function(g){(cats[g.cat]=cats[g.cat]||[]).push(g);});
     var keys=Object.keys(cats).sort(function(a,b){var ia=order.indexOf(a),ib=order.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);});
     keys.forEach(function(cat){var hh=document.createElement("div");hh.className="gcat";hh.textContent=cat;list.appendChild(hh);
@@ -440,7 +490,27 @@
   $("gloss-back").addEventListener("click",function(){show("home");});
   $("g-search").addEventListener("input",function(e){gQuery=e.target.value;listGloss();});
 
+  // キーボード操作（PC向け）: 1-9で選択肢、Enterで解答/次へ/結果
+  document.addEventListener("keydown",function(e){
+    if($("quiz").classList.contains("hide"))return;
+    if(e.key>="1"&&e.key<="9"){
+      var idx=+e.key-1,opts=document.querySelectorAll("#q-opts .opt");
+      if(opts[idx])opts[idx].click();
+    } else if(e.key==="Enter"){
+      var a=$("answer"),n=$("next"),f=$("finish");
+      if(!a.classList.contains("hide")&&a.style.pointerEvents!=="none")a.click();
+      else if(!n.classList.contains("hide"))n.click();
+      else if(!f.classList.contains("hide"))f.click();
+    }
+  });
+
   renderHome();show("home");
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
 })();
 </script>
 </body>

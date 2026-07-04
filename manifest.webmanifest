@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Azure AI-103 対策アプリ",
+  "short_name": "AI-103",
+  "description": "Microsoft Azure AI-103（AI エンジニア アソシエイト）試験対策の高難度模擬問題演習アプリ。誤答の背景まで詳しく解説し、用語集で専門用語を深く学べます。",
+  "start_url": "./index.html?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2f5fb",
+  "theme_color": "#2f6fed",
+  "lang": "ja",
+  "dir": "ltr",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

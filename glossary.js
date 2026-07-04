@@ -94,9 +94,9 @@ window.AI103_GLOSSARY = [
   body:"各モデル バージョンには公開→既定化→廃止(retirement)のスケジュールがある。\n【デプロイの更新方針】『自動更新(既定に追随)』『新版公開時にアップグレード』『固定(手動)』を選べる。\n【重要な例外】自動更新を無効(固定)にしていても、選択中バージョンが“廃止日”に達すると、サービス継続のため既定(後継)バージョンへ強制アップグレードされる。\n【混同ポイント】アップグレードのトリガーは“廃止日”であり、『5 世代古い』等の世代カウントや『自動で有効化される』仕様は存在しない。ゆえに廃止スケジュールの監視が必要。"
 },
 {
-  term:"DALL-E 3 のリクエスト（ヘッダー/URL/本文の送り分け）", cat:"生成AI",
-  aliases:["DALL-E 3 の body パラメーター"],
-  body:"画像生成 REST 呼び出しは項目を送る“場所”が問われる。\n【ヘッダー】api-key(認証)・Content-Type(application/json)。\n【URL/接続側】リソース エンドポイント＋デプロイ名＋api-version。\n【本文(body)】prompt(生成内容)・size(1024x1024/1792x1024/1024x1792)・quality(standard/hd)・style(vivid/natural)・n。\n【DALL-E 3 の制約】n=1 のみ(複数枚同時生成不可)。\n【混同ポイント】api-version やキーを“本文”と勘違いさせる引っかけが多い。prompt/size/quality/style/n＝本文、api-key/Content-Type＝ヘッダー、api-version＝URL、と覚える。"
+  term:"DALL-E 3 のリクエスト（ヘッダー/URL/本文の送り分け）と応答形式", cat:"生成AI",
+  aliases:["DALL-E 3 の body パラメーター","response_format","b64_json","DALL-E の応答形式"],
+  body:"画像生成 REST 呼び出しは項目を送る“場所”が問われる。\n【ヘッダー】api-key(認証)・Content-Type(application/json)。\n【URL/接続側】リソース エンドポイント＋デプロイ名＋api-version。\n【本文(body)】prompt(生成内容)・size(1024x1024/1792x1024/1024x1792)・quality(standard/hd)・style(vivid/natural)・n。\n【DALL-E 3 の制約】n=1 のみ(複数枚同時生成不可)。\n【応答形式】既定では生成画像への“URL”が返り、Azure OpenAI ではその URL は約 24 時間で失効する。恒久保存したければ期限内にダウンロードして自前ストレージへ保存する。response_format に b64_json を指定すれば、URL の代わりに Base64 エンコードされた画像データを直接受け取れる。\n【混同ポイント】api-version やキーを“本文”と勘違いさせる引っかけが多い。prompt/size/quality/style/n＝本文、api-key/Content-Type＝ヘッダー、api-version＝URL、と覚える。応答の URL は“permanent ではない”点も頻出。"
 },
 
 /* ===== エージェント ================================================== */
@@ -322,3 +322,66 @@ window.AI103_GLOSSARY = [
 }
 
 ];
+
+/* ===== アプリ開発（SDK/エンドポイント/認証/チャットAPI） ===== */
+window.AI103_GLOSSARY = window.AI103_GLOSSARY.concat([
+{
+  term:"Foundry SDK（AIProjectClient）と OpenAI SDK の使い分け", cat:"アプリ開発",
+  aliases:["AIProjectClient","azure-ai-projects","get_openai_client","Foundry SDK vs OpenAI SDK","project_client"],
+  body:"Microsoft Foundry で AI アプリを作る 2 つの道具の使い分け。\n【Foundry SDK(AIProjectClient)】Foundry“固有”機能に使う: エージェントの構築/管理(Agent Service)、ツール呼び出しと承認のワークフロー、クラウド評価、トレースと可観測性、Foundry ダイレクト モデル(Azure OpenAI 以外のモデル)へのアクセス、プロジェクトのメタデータ/接続/ガバナンス。\n【OpenAI SDK】OpenAI API との最大互換性が要る場合に使う: 既存 OpenAI コード資産の流用、OpenAI/Azure OpenAI 間の移植性、Chat Completions/Responses/画像 API、Foundry 固有概念への依存を最小化したい場合。\n【橋渡し】Foundry SDK の `project_client.get_openai_client()` を呼べば、そこから OpenAI 互換のチャット クライアントを取得でき、1 つのアプリで両 SDK を併用できる(プロジェクト機能は Foundry SDK、モデル推論は OpenAI SDK、という組み合わせが典型)。\n【パッケージ依存】Python で Foundry SDK(`azure-ai-projects`)を使ってチャットするには、`openai` パッケージも別途インストールが必要(Foundry SDK のチャット機能は OpenAI SDK 由来のため)。\n【混同ポイント】『エージェント/評価/トレースが要る→Foundry SDK』『OpenAI 互換性/移植性が最優先→OpenAI SDK』。どちらも同じ Foundry プロジェクト エンドポイントで動作でき、排他的ではない。"
+},
+{
+  term:"Responses API と ChatCompletions API の違い", cat:"アプリ開発",
+  aliases:["Responses API","ChatCompletions API","previous_response_id","output_text","responses.create","chat.completions.create"],
+  body:"OpenAI 互換クライアントが提供する 2 つのチャット API。\n【Responses API(推奨)】以前は別々だった ChatCompletions と Assistants の機能を統合。“ステートフル”——`previous_response_id` に直前の応答 ID を渡すだけで会話の文脈が自動的に維持される(履歴をアプリ側で組み立て直す必要がない)。Azure OpenAI モデルだけでなく Microsoft Phi や DeepSeek などの“Foundry ダイレクト モデル”とも連携できる。呼び出しは `client.responses.create(model=..., instructions=..., input=...)`、結果は `response.output_text` で取得。\n【ChatCompletions API】“ステートレス”——`messages=[{role:system/user/assistant, content:...}, ...]` という JSON 配列を毎回まるごと送る必要があり、会話履歴の保持はアプリ側で手動管理する。多くのモデル/プラットフォーム間で長年使われ広く互換性がある。呼び出しは `client.chat.completions.create(model=..., messages=[...])`、結果は `completion.choices[0].message.content` で取得。\n【混同ポイント】『新規プロジェクトで文脈維持を楽にしたい→Responses(previous_response_id)』『既存コード資産や幅広いプラットフォーム互換性が要る→ChatCompletions(手動でmessages配列を積む)』。結果の取り出し方(`output_text` vs `choices[0].message.content`)や引数名(`input` vs `messages`、`instructions` vs systemロールメッセージ)も紛らわしいので要区別。"
+},
+{
+  term:"クライアント認証（Microsoft Entra ID / API キー / 環境変数）", cat:"アプリ開発",
+  aliases:["DefaultAzureCredential","get_bearer_token_provider","az login","トークン プロバイダー","AZURE_OPENAI_API_KEY"],
+  body:"クライアント アプリが Foundry/Azure OpenAI エンドポイントに認証する方法は複数ある。\n【Microsoft Entra ID 認証(運用で推奨)】`DefaultAzureCredential` ＋ `get_bearer_token_provider(credential, \"https://ai.azure.com/.default\")` でベアラー トークン プロバイダーを作り、それを `api_key` 引数としてクライアントに渡す(実体はキーではなくトークン)。ローカル開発では事前に `az login` でサインインしておく必要がある。\n【API キー認証】環境変数(例: `AZURE_OPENAI_API_KEY`)等からキー文字列を読み込み、そのまま渡す。手軽だがキー漏えいリスクがあり、コードに直接ハードコードしてはならない。\n【環境変数の自動認識】`OPENAI_BASE_URL` と `OPENAI_API_KEY` を環境変数として設定しておけば、引数なしで `OpenAI()` を呼ぶだけでクライアントが自動的にそれらを使う。\n【混同ポイント】『本番運用→Entra ID(トークン プロバイダー)』『簡易検証→キーまたは環境変数』。Entra ID 方式でも `api_key` という同じ引数名にトークン プロバイダーを渡す点(名前と実体が一致しないように見える)が紛らわしい。"
+},
+{
+  term:"ストリーミング応答と非同期クライアント（stream=True / AsyncOpenAI）", cat:"アプリ開発",
+  aliases:["stream=True","AsyncOpenAI","response.output_text.delta","非同期クライアント"],
+  body:"応答性の高いチャット アプリを作るための 2 つの独立した手段。\n【ストリーミング(stream=True)】応答をまとめて待つのではなく、生成され次第“少しずつ”受け取る。Responses API では `response.output_text.delta` イベントで断片を、`response.completed` イベントで最終的な応答 ID を受け取る。長い応答でもユーザーは待ち時間を体感しにくい。\n【非同期クライアント(AsyncOpenAI)】`OpenAI` の代わりに `AsyncOpenAI` を使い、各 API 呼び出しに `await` を付ける。長時間実行の要求や、アプリをブロックせず複数要求を同時処理したい場合に有効。\n【違い】ストリーミングは“応答の受け取り方(逐次か一括か)”、非同期は“呼び出しの実行モデル(ブロッキングか否か)”という別の軸。両者は独立しており、非同期ストリーミングのように組み合わせて使うこともできる。\n【混同ポイント】『UIをフリーズさせず部分表示したい→ストリーミング』『重い処理中も他のリクエストを並行処理したい→非同期』。どちらか一方だけでは他方の課題は解決しない。"
+},
+{
+  term:"コンテキスト ウィンドウに含まれる要素とトークン消費", cat:"アプリ開発",
+  aliases:["コンテキスト ウィンドウ","トークン使用量","conversation_history"],
+  body:"1 回の推論実行でモデルに送られる“コンテキスト ウィンドウ”には、次のものがすべて連結され、トークン化されて送信される。\n① システムの指示(instructions、安全規則)\n② 現在のプロンプト\n③ 会話履歴(これまでのユーザー/アシスタントのやり取り)\n④ ツール スキーマ(関数/OpenAPI 仕様/MCP ツールの定義)\n⑤ ツール出力(検索結果・コード実行結果・ファイル内容など)\n⑥ 取得されたメモリ/ドキュメント(メモリ ストア・RAG・ファイル検索から)\n【重要な誤解ポイント】Responses API の `previous_response_id` は“会話履歴を毎回書き直す手間”を無くす便利機能であって、これを使えばトークン消費が自動的に安くなるわけではない——結局、上記の履歴やツール関連情報は毎回まとめてモデルに送られるため、会話が長引くほどトークン使用量は増えていく。SDK は状態“管理”を助けるだけで、コスト最適化は別途考える必要がある。"
+}
+]);
+
+/* ===== 追加バッチ: Vision 4.0 / Language カスタム / Speech / function calling / クォータ ===== */
+window.AI103_GLOSSARY = window.AI103_GLOSSARY.concat([
+{
+  term:"Image Analysis 4.0 の視覚機能（キャプション/密集キャプション/タグ/物体/人物/スマート クロップ/背景除去）", cat:"ビジョン",
+  aliases:["キャプション","密集キャプション","dense captions","スマート クロップ","smart crop","背景除去","background removal","Image Analysis"],
+  body:"Azure AI Vision の Image Analysis 4.0 が提供する視覚機能の一覧と役割。\n【キャプション(caption)】画像“全体”を説明する自然言語の 1 文を生成(信頼度スコア付き)。\n【密集キャプション(dense captions)】画像内の最大 10 の領域それぞれに個別の説明文を生成。全体 1 文のキャプションとの違いは“領域ごとに複数”出る点。\n【タグ(tags)】画像に写る物体・動作などを示す単語ラベルの一覧(数千種類の認識語彙)。文章ではなく語の列挙。\n【物体検出(objects)】ラベル＋バウンディング ボックス座標。\n【人物検出(people)】画像内の人の位置(ボックス)を返す。\n【スマート クロップ(smart crops)】画像の“重要な領域”を自動判別し、指定したアスペクト比で最適なサムネイル切り出し領域を提案する。単純な中央切り抜きと違い、被写体が端に居ても外さない。\n【背景除去(background removal)】前景の被写体を切り出すマスク(前景マット)を生成。\n【混同ポイント】『全体を 1 文で→キャプション』『領域ごとに複数の説明→密集キャプション』『単語ラベルの列挙→タグ』『サムネイル用の切り出し→スマート クロップ』。それぞれ返る形が“文/複数文/単語/座標/マスク”と異なる。"
+},
+{
+  term:"Language のカスタム モデル（カスタム テキスト分類 と カスタム NER）", cat:"自然言語",
+  aliases:["カスタム テキスト分類","カスタム NER","カスタム固有表現認識","単一ラベル分類 vs 複数ラベル分類"],
+  body:"Azure AI Language では独自データでカスタム モデルを学習できる。代表が 2 つ。\n【カスタム テキスト分類】文書“全体”を独自カテゴリに分類する。プロジェクト作成時に『単一ラベル分類(1 文書に 1 カテゴリ)』か『複数ラベル分類(1 文書に複数カテゴリ可)』を選ぶ——Custom Vision の Multiclass/Multilabel と同じ発想の区別。\n【カスタム NER(固有表現認識)】文書“内の断片”から独自定義のエンティティ型(例: 契約書の当事者名・貸付金額・担保物件)をラベル学習して抽出する。\n【事前構築 NER との違い】事前構築 NER は Person/Location/Organization など一般的な型のみ。業務固有の型を抽出したければカスタム NER が必要。\n【混同ポイント】『文書→カテゴリを付ける=分類』『文書内の語句→型付きで抜き出す=NER』。どちらもラベル付きデータでの学習・Language Studio でのプロジェクト管理が必要。"
+},
+{
+  term:"要約（抽出型 と 抽象型）", cat:"自然言語",
+  aliases:["抽出型要約","抽象型要約","extractive summarization","abstractive summarization","言語の要約"],
+  body:"Azure AI Language の要約には 2 方式ある。\n【抽出型要約(extractive)】原文から“重要な文をそのまま”選び出して要約とする。各文に重要度(rank)スコアが付き、原文にある表現しか含まれない。\n【抽象型要約(abstractive)】内容を理解した上で“新しい文章を生成”して要約する。原文にない言い回しが現れ得る、より人間的な要約。\n【会話要約】通話やチャットの記録向けに、章立て(chapter)や要点(narrative)などの形式で要約する機能もある。\n【混同ポイント】『原文の文を選抜→抽出型』『新規に文章を生成→抽象型』。また“キー フレーズ抽出”は語句の列挙であって文の要約ではない——返るものが『語句 vs 文』で異なる。"
+},
+{
+  term:"Speech SDK の認識パターン（RecognizeOnce と 連続認識）と音声翻訳・出力形式", cat:"自然言語",
+  aliases:["RecognizeOnceAsync","連続認識","StartContinuousRecognitionAsync","TranslationRecognizer","addTargetLanguage","SpeechSynthesisOutputFormat"],
+  body:"Speech SDK で音声を扱う際の主要パターン。\n【RecognizeOnceAsync(単発認識)】“1 つの発話”を 1 回だけ認識する。最初の無音区切りまで、上限はおよそ 15 秒。音声コマンドや短い質問向け。\n【連続認識(StartContinuousRecognitionAsync)】明示的に停止するまで認識を続け、認識結果はイベント(recognized 等)で逐次受け取る。長い口述・会議の文字起こし向け。\n【音声翻訳(TranslationRecognizer)】SpeechTranslationConfig に addTargetLanguage を“複数回”呼ぶことで、1 つの音声入力から複数のターゲット言語への翻訳を同時に得られる。\n【音声合成の出力形式】SpeechSynthesisOutputFormat の設定で、合成音声のファイル形式やビットレート(wav/mp3 等)を指定できる。\n【混同ポイント】『短い 1 発話(~15秒)→RecognizeOnce』『止めるまで続ける→連続認識』。“複数言語へ同時翻訳できるか”→できる(ターゲット言語を複数追加)。"
+},
+{
+  term:"Azure OpenAI の function calling 実行フロー", cat:"生成AI",
+  aliases:["function calling の流れ","tools パラメーター","tool_choice","関数呼び出しフロー"],
+  body:"function calling(関数呼び出し)は“モデルが外部関数の呼び出し方を提案し、実行はアプリが担う”仕組み。フローは 5 段階。\n① 開発者がリクエストに tools(関数の名前・説明・パラメーターの JSON スキーマ)を含める\n② モデルは関数が必要と判断すると、応答として『呼ぶべき関数名＋引数の JSON』を返す——**モデル自身は関数を実行しない**\n③ アプリ側コードがその引数で実際に関数を実行する\n④ 実行結果を tool ロールのメッセージとして会話に追加し、再度モデルへ送る\n⑤ モデルが結果を踏まえた最終応答を生成する\n【tool_choice】auto(モデル判断)/特定関数の強制/none を制御できる。\n【混同ポイント】最大の誤解は『モデルが関数を実行してくれる』——実行責任は常にアプリ側。モデルが返すのは“呼び出しの指示(名前と引数)”だけ。セキュリティ上も、引数は検証してから実行するのが実務の定石。"
+},
+{
+  term:"クォータ管理（TPM の分配）と 429 エラーへの対処", cat:"計画・基盤",
+  aliases:["429 エラー","レート制限","クォータ","TPM 割り当て","指数バックオフ"],
+  body:"Azure OpenAI の利用量管理と、超過時のエラー対処。\n【TPM クォータの構造】クォータは“サブスクリプション×リージョン×モデル”単位で割り当てられ、その枠内で各デプロイに TPM(tokens per minute)を分配する。同じモデルのデプロイを複数作ると、限られたクォータを取り合う。RPM(requests per minute)は TPM に連動して決まる(目安: 1000 TPM あたり 6 RPM)。\n【429 Too Many Requests】割り当てたレート制限を超過すると返るエラー。対処は:\n① 指数バックオフ(exponential backoff)付きの再試行を実装する\n② デプロイへの TPM 割り当てを見直す/クォータ引き上げを申請する\n③ 負荷が恒常的に高いなら PTU(Provisioned)デプロイを検討する\n④ 要求をまとめる・不要トークンを削るなど消費自体を減らす\n【混同ポイント】429 は“認証エラー(401)”でも“リソース障害(5xx)”でもなく、**自分で設定したレート制限の超過**。まずリトライ戦略、恒常的なら容量(クォータ/PTU)の見直し、という順で考える。"
+}
+]);
