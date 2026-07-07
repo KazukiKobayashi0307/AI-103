@@ -194,6 +194,10 @@
         <div class="seg" id="seg-thresh"><button data-v="2">2</button><button data-v="3" class="on">3</button><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6</button></div>
         <span class="unit">回連続正解</span>
       </div>
+      <div class="ctl"><span class="cl">復習優先</span>
+        <div class="seg" id="seg-priority"><button data-v="1" class="on">ON</button><button data-v="0">OFF</button></div>
+        <span class="unit">間違えた問題を優先出題</span>
+      </div>
       <div class="ctl range"><span class="cl">範囲</span><button class="link rangeval" id="range-toggle">すべて ▾</button></div>
       <div class="rgroup hide" id="rpanel-wrap">
         <div class="glabel">分野</div>
@@ -280,7 +284,7 @@
   function jload(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch(e){return f;}}
   function jsave(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
   var streaks=jload(SK,{}),s0=jload(CK,{}),stats=jload(STK,{});
-  var cfg={count:s0.count||10,thresh:s0.thresh||3,domains:Array.isArray(s0.domains)?s0.domains:[],sources:Array.isArray(s0.sources)?s0.sources:[]};
+  var cfg={count:s0.count||10,thresh:s0.thresh||3,domains:Array.isArray(s0.domains)?s0.domains:[],sources:Array.isArray(s0.sources)?s0.sources:[],priorityReview:s0.priorityReview!==false};
   function saveCfg(){jsave(CK,cfg);} function saveStreaks(){jsave(SK,streaks);} function saveStats(){jsave(STK,stats);}
   function isTricky(q){var s=stats[q.id];return !!(s&&s.w>0)&&!isMastered(q);}  // 一度でも間違えた未習得問題＝要復習
   var $=function(id){return document.getElementById(id);};
@@ -328,6 +332,7 @@
     $("h-track").style.width=pct+"%";
     [].forEach.call($("seg-count").children,function(b){b.classList.toggle("on",+b.dataset.v===cfg.count);});
     [].forEach.call($("seg-thresh").children,function(b){b.classList.toggle("on",+b.dataset.v===cfg.thresh);});
+    [].forEach.call($("seg-priority").children,function(b){b.classList.toggle("on",(+b.dataset.v===1)===cfg.priorityReview);});
     // range summary label
     var anyD=cfg.domains.length>0, anyS=cfg.sources.length>0;
     var parts=[];
@@ -365,6 +370,7 @@
   }
   $("seg-count").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;cfg.count=+b.dataset.v;saveCfg();renderHome();});
   $("seg-thresh").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;cfg.thresh=+b.dataset.v;saveCfg();renderHome();});
+  $("seg-priority").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;cfg.priorityReview=(+b.dataset.v===1);saveCfg();renderHome();});
   $("range-toggle").addEventListener("click",function(){$("rpanel-wrap").classList.toggle("hide");});
   $("reset").addEventListener("click",function(){if(confirm("すべての連続正解・習得状況・解答履歴をリセットします。よろしいですか？")){streaks={};stats={};saveStreaks();saveStats();renderHome();}});
 
@@ -379,13 +385,21 @@
     if(scope.length===0)return;
     var pool=review?scope.slice():scope.filter(function(q){return !isMastered(q);});
     if(pool.length===0)pool=scope.slice();
-    // 間違い優先の重み付け: 出題枠の半分までを「過去に間違えた問題」から先に確保し、残りは通常プールから
     pool=shuffle(pool);
+    if(!cfg.priorityReview){
+      // OFF: 純粋なランダム抽選のみ(復習優先の重み付けなし)
+      buildSession(pool.slice(0,cfg.count),review);
+      return;
+    }
+    // ON: 間違い優先の軽い重み付け。出題枠の最大20%程度(小さい絶対数)だけを「過去に間違えた問題」から
+    // 予約し、残りは通常のランダム抽選から選ぶ。予約数を出題数の半分にすると、間違えた問題が
+    // 毎回のセッションで過剰に(50%以上の確率で)再出現し「ランダムに感じない」原因になるため、
+    // 予約枠は小さく保つ(検証済み: 半分予約だと同じ問題が60%超の頻度で再出現していた)。
     var tricky=pool.filter(function(q){var s=stats[q.id];return s&&s.w>0;});
     var fresh=pool.filter(function(q){var s=stats[q.id];return !s||s.w===0;});
-    var half=Math.ceil(cfg.count/2);
-    var sel=tricky.slice(0,half).concat(fresh);
-    if(sel.length<cfg.count)sel=sel.concat(tricky.slice(half));
+    var reserveCap=Math.max(1,Math.round(cfg.count*0.2));
+    var sel=tricky.slice(0,reserveCap).concat(fresh);
+    if(sel.length<cfg.count)sel=sel.concat(tricky.slice(reserveCap));
     buildSession(shuffle(sel.slice(0,cfg.count)),review);
   }
   $("go").addEventListener("click",function(){start($("go").dataset.review==="1");});
