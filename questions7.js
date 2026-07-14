@@ -118,7 +118,7 @@ window.AI103_QUESTIONS = (window.AI103_QUESTIONS || []).concat([
   ],
   summary:"function callingでモデルが返すのは『関数名＋引数』だけ。実行はアプリの責務——実行結果をtoolメッセージで返して最終応答を得る。",
   keywords:[
-    { k:"Azure OpenAI の function calling 実行フロー", d:"モデルは実行しない、が最重要ポイント。" }
+    { k:"function calling の流れ", d:"モデルは実行しない、が最重要ポイント。" }
   ]
 },
 {

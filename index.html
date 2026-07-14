@@ -105,6 +105,11 @@
   .qcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 18px;box-shadow:var(--shadow);flex:1}
   .qtext{font-size:17.5px;font-weight:700;line-height:1.8;letter-spacing:.1px}
   .qkind{font-size:10px;letter-spacing:1.8px;color:var(--faint);text-transform:uppercase;margin:11px 0 17px;font-weight:700}
+  .qcode{background:#10141f;color:#dbe6f5;font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    font-size:12.5px;line-height:1.75;padding:14px 15px;border-radius:13px;overflow-x:auto;
+    white-space:pre;margin:13px 0;border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+  .qcode .blank{color:#ffd166;font-weight:700}
+  .opt.mono .ot{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap}
   .opts{display:flex;flex-direction:column;gap:9px}
   .opt{display:flex;gap:13px;align-items:flex-start;padding:14px 15px;border-radius:14px;border:1.5px solid var(--line);
     background:#fbfcfe;cursor:pointer;transition:.15s}
@@ -138,6 +143,7 @@
   .exrow .ic{flex:0 0 auto;width:17px;text-align:center;font-weight:800;margin-top:1px}
   .exrow.c .ic{color:var(--ok)} .exrow.x .ic{color:var(--ng)}
   .exrow .et{color:var(--sub)} .exrow .et b{color:var(--ink);font-weight:700}
+  .exrow.mono .et b{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:12px}
   .kw{margin:11px 0;padding:12px 14px;background:#fbfaf5;border:1px solid rgba(194,116,10,.18);border-radius:13px}
   .kw .term{font-weight:800;font-size:13px;color:var(--gold);margin-bottom:5px;letter-spacing:.2px}
   .kw .desc{font-size:13px;color:#4a4438;line-height:1.9}
@@ -169,6 +175,23 @@
   .gterm .gx{font-size:13px;color:var(--sub);line-height:1.9;margin-top:6px}
   .gcount{font-size:11px;color:var(--faint);margin-bottom:2px;letter-spacing:.5px;font-weight:700}
 
+  /* textbook */
+  .bookhead{margin:4px 0 22px}
+  .booktitle{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:.2px}
+  .booksub{font-size:13px;color:var(--accent);font-weight:700;margin-top:4px}
+  .bookintro{font-size:13.5px;color:var(--sub);line-height:1.85;margin-top:10px;padding:13px 15px;
+    background:#f7f9fd;border-radius:13px;border:1px solid var(--line)}
+  .booksec{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 17px;
+    margin-bottom:14px;box-shadow:var(--shadow)}
+  .bh{font-size:15.5px;font-weight:800;color:var(--ink);letter-spacing:.1px}
+  .blead{font-size:12.5px;color:var(--accent);font-weight:700;margin-top:5px}
+  .bbody{font-size:14px;color:var(--ink);line-height:1.95;margin-top:12px;white-space:normal}
+  .bchecks{margin-top:15px;background:#fbfaf5;border:1px solid rgba(194,116,10,.18);border-radius:13px;padding:13px 15px}
+  .bchecks-label{font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;font-weight:800;margin-bottom:8px}
+  .bchecks ul{margin:0;padding-left:18px}
+  .bchecks li{font-size:13px;color:#4a4438;line-height:1.85;margin-bottom:4px}
+  .bchecks li:last-child{margin-bottom:0}
+
   .spacer{flex:1}
   .mt{margin-top:18px}
 </style>
@@ -178,7 +201,9 @@
 
   <!-- HOME -->
   <section id="home" class="screen">
-    <div class="bar"><span class="wm">Azure <span class="wm sub">AI-103</span></span><button class="link" id="open-gloss">用語集 ›</button></div>
+    <div class="bar"><span class="wm">Azure <span class="wm sub">AI-103</span></span>
+      <span><button class="link" id="open-book">教科書 ›</button><button class="link" id="open-gloss" style="margin-left:6px">用語集 ›</button></span>
+    </div>
     <div class="hero">
       <div class="pct" id="h-pct">0<i>%</i></div>
       <div class="plabel">達成度</div>
@@ -221,6 +246,7 @@
     <div class="track2"><i id="q-prog" style="width:0%"></i></div>
     <div class="qcard">
       <div class="qtext" id="q-text"></div>
+      <pre class="qcode hide" id="q-code"></pre>
       <div class="qkind" id="q-kind"></div>
       <div class="opts" id="q-opts"></div>
       <div class="exp hide" id="q-exp"></div>
@@ -260,6 +286,13 @@
     <div id="g-list" class="spacer"></div>
   </section>
 
+  <!-- TEXTBOOK -->
+  <section id="book" class="screen hide">
+    <div class="bar"><button class="link" id="book-back">‹ 戻る</button><span class="wm">教科書</span></div>
+    <div class="rpanel mt" id="book-chapters"></div>
+    <div id="book-content" class="spacer"></div>
+  </section>
+
 </div>
 
 <script src="questions.js"></script>
@@ -270,7 +303,9 @@
 <script src="questions5.js"></script>
 <script src="questions6.js"></script>
 <script src="questions7.js"></script>
+<script src="questions8.js"></script>
 <script src="glossary.js"></script>
+<script src="textbook.js"></script>
 <script>
 "use strict";
 (function(){
@@ -403,7 +438,7 @@
     buildSession(shuffle(sel.slice(0,cfg.count)),review);
   }
   $("go").addEventListener("click",function(){start($("go").dataset.review==="1");});
-  function show(name){["home","quiz","result","gloss"].forEach(function(s){$(s).classList.toggle("hide",s!==name);});window.scrollTo(0,0);if(name==="home")renderHome();if(name==="gloss")renderGloss();}
+  function show(name){["home","quiz","result","gloss","book"].forEach(function(s){$(s).classList.toggle("hide",s!==name);});window.scrollTo(0,0);if(name==="home")renderHome();if(name==="gloss")renderGloss();if(name==="book")renderBook();}
   function setBtns(s){$("answer").classList.toggle("hide",s!=="answer");$("next").classList.toggle("hide",s!=="next");$("finish").classList.toggle("hide",s!=="finish");}
 
   function renderQ(){
@@ -414,13 +449,15 @@
     $("q-dommini").textContent=DOMAINS[q.domain].label+(session.review?" · 復習":"");
     var src=qsrc(q),se=$("q-src");se.textContent=src;se.classList.toggle("v103",src==="AI-103");
     $("q-text").textContent=q.q;
+    var qc=$("q-code");
+    if(q.code){qc.textContent=q.code;qc.classList.remove("hide");}else{qc.textContent="";qc.classList.add("hide");}
     $("q-kind").textContent=q.type==="multi"?"複数選択 — 正しいものをすべて":"単一選択 — 1つ選ぶ";
     var cur=streaks[q.id]||0,sk=$("q-streak");sk.innerHTML="";
     for(var x=0;x<cfg.thresh;x++){var i=document.createElement("i");if(x<cur)i.className="on";sk.appendChild(i);}
     var box=$("q-opts");box.innerHTML="";
     it.order.forEach(function(ci){var c=q.choices[ci],el=document.createElement("div");
-      el.className="opt "+(q.type==="multi"?"multi":"single");el.dataset.ci=ci;
-      el.innerHTML='<div class="mk"></div><div class="ot"></div>';el.querySelector(".ot").textContent=c.t;
+      el.className="opt "+(q.type==="multi"?"multi":"single")+(q.mono?" mono":"");el.dataset.ci=ci;
+      el.innerHTML='<div class="mk"></div><div class="ot"></div>';el.querySelector(".ot").innerHTML=escbr(c.t);
       el.addEventListener("click",function(){pick(it,ci,el);});box.appendChild(el);});
     $("q-exp").classList.add("hide");$("q-exp").innerHTML="";
     var a=$("answer");a.style.opacity=".4";a.style.pointerEvents="none";setBtns("answer");
@@ -452,7 +489,7 @@
     else{var st=streaks[q.id]||0;h+=it.correct?'<div class="snote">連続正解 '+st+' / '+cfg.thresh+'（あと '+(cfg.thresh-st)+' 回で習得）</div>':'<div class="snote">不正解のため連続正解はリセットされました（0 / '+cfg.thresh+'）</div>';}
     if(q.summary)h+='<div class="summary">'+esc(q.summary)+'</div>';
     h+='<h4>選択肢ごとの解説</h4>';
-    it.order.forEach(function(ci){var c=q.choices[ci];h+='<div class="exrow '+(c.c?'c':'x')+'"><div class="ic">'+(c.c?'◯':'×')+'</div><div class="et"><b>'+esc(c.t)+'</b><br>'+esc(c.e)+'</div></div>';});
+    it.order.forEach(function(ci){var c=q.choices[ci];h+='<div class="exrow '+(c.c?'c':'x')+(q.mono?' mono':'')+'"><div class="ic">'+(c.c?'◯':'×')+'</div><div class="et"><b>'+escbr(c.t)+'</b><br>'+esc(c.e)+'</div></div>';});
     var kws=collectKeywords(q);
     if(kws.length){h+='<h4>用語解説</h4>';kws.forEach(function(kw){h+='<div class="kw"><div class="term">'+esc(kw.term)+'</div><div class="desc">'+escbr(kw.body)+'</div></div>';});}
     var ex=$("q-exp");ex.innerHTML=h;ex.classList.remove("hide");
@@ -503,6 +540,39 @@
   $("open-gloss").addEventListener("click",function(){show("gloss");});
   $("gloss-back").addEventListener("click",function(){show("home");});
   $("g-search").addEventListener("input",function(e){gQuery=e.target.value;listGloss();});
+
+  /* ---- textbook (beginner-friendly narrative chapters, grouped by domain) ---- */
+  var bookChapter=null;
+  function renderBook(){
+    var BOOK=(window.AI103_TEXTBOOK||[]);
+    if(bookChapter===null && BOOK.length)bookChapter=BOOK[0].domain;
+    var nav=$("book-chapters");
+    if(!nav.dataset.built){
+      BOOK.forEach(function(ch){var el=document.createElement("button");el.className="chip";el.dataset.d=ch.domain;
+        el.style.color=DOMAINS[ch.domain]?DOMAINS[ch.domain].raw:"var(--accent)";
+        el.innerHTML='<span class="d"></span><span>'+ch.title+'</span>';
+        el.addEventListener("click",function(){bookChapter=ch.domain;renderBook();});
+        nav.appendChild(el);});
+      nav.dataset.built="1";
+    }
+    [].forEach.call(nav.children,function(el){el.classList.toggle("on",el.dataset.d===bookChapter);});
+    var ch=BOOK.find(function(c){return c.domain===bookChapter;})||BOOK[0];
+    var box=$("book-content");box.innerHTML="";
+    if(!ch)return;
+    var head=document.createElement("div");head.className="bookhead";
+    head.innerHTML='<div class="booktitle">'+esc(ch.title)+'</div><div class="booksub">'+esc(ch.subtitle)+'</div><div class="bookintro">'+esc(ch.intro)+'</div>';
+    box.appendChild(head);
+    ch.sections.forEach(function(s){
+      var sec=document.createElement("div");sec.className="booksec";
+      var h='<div class="bh">'+esc(s.h)+'</div><div class="blead">'+esc(s.lead)+'</div><div class="bbody">'+escbr(s.body)+'</div>';
+      if(s.checks&&s.checks.length){
+        h+='<div class="bchecks"><div class="bchecks-label">要チェック</div><ul>'+s.checks.map(function(c){return '<li>'+esc(c)+'</li>';}).join("")+'</ul></div>';
+      }
+      sec.innerHTML=h;box.appendChild(sec);
+    });
+  }
+  $("open-book").addEventListener("click",function(){show("book");});
+  $("book-back").addEventListener("click",function(){show("home");});
 
   // キーボード操作（PC向け）: 1-9で選択肢、Enterで解答/次へ/結果
   document.addEventListener("keydown",function(e){

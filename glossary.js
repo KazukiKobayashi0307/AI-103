@@ -375,13 +375,27 @@ window.AI103_GLOSSARY = window.AI103_GLOSSARY.concat([
   body:"Speech SDK で音声を扱う際の主要パターン。\n【RecognizeOnceAsync(単発認識)】“1 つの発話”を 1 回だけ認識する。最初の無音区切りまで、上限はおよそ 15 秒。音声コマンドや短い質問向け。\n【連続認識(StartContinuousRecognitionAsync)】明示的に停止するまで認識を続け、認識結果はイベント(recognized 等)で逐次受け取る。長い口述・会議の文字起こし向け。\n【音声翻訳(TranslationRecognizer)】SpeechTranslationConfig に addTargetLanguage を“複数回”呼ぶことで、1 つの音声入力から複数のターゲット言語への翻訳を同時に得られる。\n【音声合成の出力形式】SpeechSynthesisOutputFormat の設定で、合成音声のファイル形式やビットレート(wav/mp3 等)を指定できる。\n【混同ポイント】『短い 1 発話(~15秒)→RecognizeOnce』『止めるまで続ける→連続認識』。“複数言語へ同時翻訳できるか”→できる(ターゲット言語を複数追加)。"
 },
 {
-  term:"Azure OpenAI の function calling 実行フロー", cat:"生成AI",
-  aliases:["function calling の流れ","tools パラメーター","tool_choice","関数呼び出しフロー"],
-  body:"function calling(関数呼び出し)は“モデルが外部関数の呼び出し方を提案し、実行はアプリが担う”仕組み。フローは 5 段階。\n① 開発者がリクエストに tools(関数の名前・説明・パラメーターの JSON スキーマ)を含める\n② モデルは関数が必要と判断すると、応答として『呼ぶべき関数名＋引数の JSON』を返す——**モデル自身は関数を実行しない**\n③ アプリ側コードがその引数で実際に関数を実行する\n④ 実行結果を tool ロールのメッセージとして会話に追加し、再度モデルへ送る\n⑤ モデルが結果を踏まえた最終応答を生成する\n【tool_choice】auto(モデル判断)/特定関数の強制/none を制御できる。\n【混同ポイント】最大の誤解は『モデルが関数を実行してくれる』——実行責任は常にアプリ側。モデルが返すのは“呼び出しの指示(名前と引数)”だけ。セキュリティ上も、引数は検証してから実行するのが実務の定石。"
+  term:"Azure OpenAI の function calling 実行フロー（Responses API の実装詳細）", cat:"生成AI",
+  aliases:["function calling の流れ","tools パラメーター","tool_choice","関数呼び出しフロー","function_call_output","call_id","item.type","function_call"],
+  body:"function calling(関数呼び出し)は“モデルが外部関数の呼び出し方を提案し、実行はアプリが担う”仕組み。フローは 5 段階。\n① 開発者がリクエストに tools(関数の名前・説明・パラメーターの JSON スキーマ)を含める\n② モデルは関数が必要と判断すると、応答として『呼ぶべき関数名＋引数の JSON』を返す——**モデル自身は関数を実行しない**\n③ アプリ側コードがその引数で実際に関数を実行する\n④ 実行結果を tool ロールのメッセージとして会話に追加し、再度モデルへ送る\n⑤ モデルが結果を踏まえた最終応答を生成する\n【tool_choice】auto(モデル判断)/特定関数の強制/none を制御できる。\n【Responses API での実装の型】① `response.output` をループし、各要素の `item.type` が `\"function_call\"` かつ `item.name` が目的の関数名かを判定する。② 一致したら実際に関数を実行し、結果を `{\"type\": \"function_call_output\", \"call_id\": item.call_id, \"output\": 結果}` という辞書として `messages`(または `input`)に追加する。`call_id` は要求と結果を対応付けるための必須キーで、これが無いとモデルはどの呼び出しに対する結果か分からない。③ 更新した `messages` を使って再度 `responses.create()` を呼び、最終応答を得る。\n【混同ポイント】最大の誤解は『モデルが関数を実行してくれる』——実行責任は常にアプリ側。モデルが返すのは“呼び出しの指示(名前と引数)”だけ。`call_id` を付け忘れる/取り違えるのが実装時の典型的なミス。セキュリティ上も、引数は検証してから実行するのが実務の定石。"
 },
 {
   term:"クォータ管理（TPM の分配）と 429 エラーへの対処", cat:"計画・基盤",
   aliases:["429 エラー","レート制限","クォータ","TPM 割り当て","指数バックオフ"],
   body:"Azure OpenAI の利用量管理と、超過時のエラー対処。\n【TPM クォータの構造】クォータは“サブスクリプション×リージョン×モデル”単位で割り当てられ、その枠内で各デプロイに TPM(tokens per minute)を分配する。同じモデルのデプロイを複数作ると、限られたクォータを取り合う。RPM(requests per minute)は TPM に連動して決まる(目安: 1000 TPM あたり 6 RPM)。\n【429 Too Many Requests】割り当てたレート制限を超過すると返るエラー。対処は:\n① 指数バックオフ(exponential backoff)付きの再試行を実装する\n② デプロイへの TPM 割り当てを見直す/クォータ引き上げを申請する\n③ 負荷が恒常的に高いなら PTU(Provisioned)デプロイを検討する\n④ 要求をまとめる・不要トークンを削るなど消費自体を減らす\n【混同ポイント】429 は“認証エラー(401)”でも“リソース障害(5xx)”でもなく、**自分で設定したレート制限の超過**。まずリトライ戦略、恒常的なら容量(クォータ/PTU)の見直し、という順で考える。"
+}
+]);
+
+/* ===== 追加バッチ: Responses API の組み込みツール4種 ===== */
+window.AI103_GLOSSARY = window.AI103_GLOSSARY.concat([
+{
+  term:"Responses API の組み込みツール4種（code_interpreter / web_search / file_search / function）の使い分け", cat:"アプリ開発",
+  aliases:["code_interpreter","web_search","file_search（ツール）","vector_stores.create","file_search_call.results","file_batches.upload_and_poll","container auto"],
+  body:"生成 AI モデルをツールで拡張する 4 つの組み込みタイプ。目的・戻り値・制限が明確に異なる。\n【code_interpreter】モデルが“Python コードを書いて実行”できるサンドボックス環境。数式計算・データ変換・CSV解析などに使う。pandas/numpy等はプレインストール済み。**外部ネットワーク アクセスは無い**(禁止事項として頻出)。tools配列では `{\"type\": \"code_interpreter\", \"container\": {\"type\": \"auto\"}}` のように container設定を伴うことが多い。\n【web_search】モデルが“インターネットを検索”して最新情報を取得できるツール。最近のイベント・価格・製品情報など、学習データに無い情報の取得に使う。取得元の品質は保証されないため重要な事実は別途検証が要る。\n【file_search】モデルが“アップロード済みファイル(ベクター ストア)”を意味的に検索できるツール。社内ポリシー文書やマニュアルなど、特定の非公開資料に根拠づけた回答をしたい場合に使う。事前に `vector_stores.create()` でストアを作り、`file_batches.upload_and_poll()` でファイルを登録し、tools配列で `vector_store_ids` を指定する。\n【function】モデルが“アプリ独自の関数”を呼び出す(呼び出し指示を出すだけで実行はしない)ツール。外部API・DB・業務ロジックとの連携に使う。\n【混同ポイント】『最新のWeb情報が要る→web_search』『自社の特定文書に根拠づけたい→file_search』『計算/データ処理を実行させたい→code_interpreter』『独自システムを呼びたい→function』。file_search は“アップロードした特定ファイル集合”への固定に強いが、複数のデータ ストアにまたがる大規模エンタープライズ検索には Foundry IQ(ナレッジの中央集約)を検討する。"
+},
+{
+  term:"ツール選択の既定動作（モデルが自律的に選ぶ）と instructions によるガイド", cat:"アプリ開発",
+  aliases:["ツール選択規則","tools配列の指定方法"],
+  body:"tools配列で複数ツールを渡した場合、既定では“どのツールをいつ使うか(あるいは使わないか)”は**モデルがプロンプト内容から自律的に判断**する——開発者が毎回明示的に指定する必要はない。\n【ガイド方法】この既定の選択挙動は、instructions(システム プロンプト)パラメーターで誘導できる。例えば「最新情報が必要な場合は web_search を使う」のように指示すると、モデルはその方針に沿ってツール使用を判断しやすくなる。\n【混同ポイント】『毎回のプロンプトでツールを明示的に選ばないと使われない』は誤り——複数ツールを一度に渡しておき、モデルに判断させるのが基本パターン。厳密に制御したい場合のみ tool_choice で特定ツールの強制/禁止を行う。"
 }
 ]);
