@@ -1,7 +1,7 @@
 // Azure AI-103 対策アプリ - Service Worker
 // シェル(HTML/JS/アイコン)をキャッシュし、TWA/PWAのインストール要件を満たす。
 // キャッシュ名の末尾番号を上げるだけで、次回アクセス時に確実に更新版へ切り替わる。
-const CACHE_NAME = "ai103-shell-v6";
+const CACHE_NAME = "ai103-shell-v12";
 const SHELL_FILES = [
   "./",
   "./index.html",
@@ -15,6 +15,12 @@ const SHELL_FILES = [
   "./questions6.js",
   "./questions7.js",
   "./questions8.js",
+  "./questions9.js",
+  "./questions10.js",
+  "./questions11.js",
+  "./questions12.js",
+  "./questions13.js",
+  "./questions14.js",
   "./glossary.js",
   "./textbook.js",
   "./icons/icon-192.png",

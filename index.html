@@ -24,7 +24,7 @@
     --ok:#12a454; --okSoft:rgba(18,164,84,.11); --ng:#e0294b; --ngSoft:rgba(224,41,75,.10);
     --gold:#c2740a;
     --plan:#2f6fed; --genai:#7c3aed; --agent:#ea580c; --vision:#059669; --nlp:#0e8fa6; --knowledge:#c026a3;
-    --a102:#5b6472; --a103:#2f6fed;
+    --a102:#5b6472; --a103:#2f6fed; --audemy:#a3238e;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
   html,body{background:var(--bg);color:var(--ink);overscroll-behavior:none}
@@ -95,7 +95,6 @@
   .qbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
   .qbar .no{font-size:12px;font-weight:800;letter-spacing:.5px;color:var(--ink);font-variant-numeric:tabular-nums}
   .qbar .src{font-size:9px;font-weight:800;letter-spacing:1px;padding:3px 9px;border-radius:6px;color:#fff;background:var(--a102)}
-  .qbar .src.v103{background:var(--a103)}
   .qbar .dom{font-size:11px;font-weight:700;letter-spacing:.3px;padding:2px 0}
   .qbar .streak{margin-left:auto;display:flex;gap:4px}
   .qbar .streak i{width:7px;height:7px;border-radius:50%;background:rgba(20,30,60,.12);transition:.25s}
@@ -304,6 +303,12 @@
 <script src="questions6.js"></script>
 <script src="questions7.js"></script>
 <script src="questions8.js"></script>
+<script src="questions9.js"></script>
+<script src="questions10.js"></script>
+<script src="questions11.js"></script>
+<script src="questions12.js"></script>
+<script src="questions13.js"></script>
+<script src="questions14.js"></script>
 <script src="glossary.js"></script>
 <script src="textbook.js"></script>
 <script>
@@ -313,8 +318,8 @@
   var DORDER=["plan","genai","agent","vision","nlp","knowledge"];
   var DOMAINS={plan:{label:"計画と管理",raw:"#2f6fed"},genai:{label:"生成 AI",raw:"#7c3aed"},agent:{label:"エージェント",raw:"#ea580c"},
     vision:{label:"ビジョン",raw:"#059669"},nlp:{label:"自然言語",raw:"#0e8fa6"},knowledge:{label:"ナレッジ",raw:"#c026a3"}};
-  var SORDER=["AI-102","AI-103"];
-  var SOURCES={"AI-102":{label:"AI-102",raw:"#5b6472"},"AI-103":{label:"AI-103",raw:"#2f6fed"}};
+  var SORDER=["AI-102","AI-103","Udemy AI-103"];
+  var SOURCES={"AI-102":{label:"AI-102",raw:"#5b6472"},"AI-103":{label:"AI-103",raw:"#2f6fed"},"Udemy AI-103":{label:"Udemy",raw:"#a3238e"}};
   var SK="ai103_progress_v3", CK="ai103_settings_v4", STK="ai103_stats_v1";   // v4: 出典(source)フィルタ追加 / stats: qidごとの正解・不正解回数
   function jload(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch(e){return f;}}
   function jsave(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -447,7 +452,7 @@
     $("q-prog").style.width=(session.i/session.items.length*100)+"%";
     $("q-dom").textContent=DOMAINS[q.domain].label;$("q-dom").style.color=DOMAINS[q.domain].raw;
     $("q-dommini").textContent=DOMAINS[q.domain].label+(session.review?" · 復習":"");
-    var src=qsrc(q),se=$("q-src");se.textContent=src;se.classList.toggle("v103",src==="AI-103");
+    var src=qsrc(q),se=$("q-src");se.textContent=(SOURCES[src]?SOURCES[src].label:src);se.style.background=SOURCES[src]?SOURCES[src].raw:"var(--a102)";
     $("q-text").textContent=q.q;
     var qc=$("q-code");
     if(q.code){qc.textContent=q.code;qc.classList.remove("hide");}else{qc.textContent="";qc.classList.add("hide");}
